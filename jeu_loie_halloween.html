@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de l'Oie d'Halloween : Édition Cartes Actions & Dés Magiques</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        halloween: {
+                            dark: '#0f071a',
+                            card: '#1a102f',
+                            purple: '#4c1d95',
+                            orange: '#f97316',
+                            glow: '#a855f7',
+                            slime: '#22c55e',
+                            blood: '#ef4444'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Creepster & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .font-creepster {
+            font-family: 'Creepster', cursive, sans-serif;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0413;
+            color: #f3f4f6;
+            background-image: radial-gradient(circle at 50% 20%, #1f0c3d 0%, #0b0413 70%);
+            min-height: 100vh;
+        }
+        .neon-glow {
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.7), 0 0 20px rgba(249, 115, 22, 0.5);
+        }
+        .box-glow {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a102f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4c1d95;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7c3aed;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center justify-start min-h-screen">
+
+    <!-- Header & Bouton API Dev / IA -->
+    <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <div class="text-center md:text-left">
+            <h1 class="text-3xl md:text-5xl font-creepster text-orange-500 neon-glow tracking-wider mb-1">
+                🎃 Le Manoir Maudit : Édition Ultime 👻
+            </h1>
+            <p class="text-purple-300 text-xs md:text-sm">Atteignez le Portail Mystique (Case 42) avec vos cartes, dés spéciaux et sorts !</p>
+        </div>
+        <button onclick="openApiModal()" class="px-4 py-2.5 bg-purple-900/85 hover:bg-purple-800 text-orange-300 border border-purple-600 rounded-xl font-bold text-sm shadow-lg transition flex items-center gap-2">
+            <span>⚙️</span> API Actions (IA / Dev)
+        </button>
+    </header>
+
+    <!-- Modal Personnalisé -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+        <div class="bg-halloween-card border-2 border-purple-500 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl text-center box-glow">
+            <h3 id="modal-title" class="text-2xl font-creepster text-orange-400 mb-3">Avertissement</h3>
+            <p id="modal-message" class="text-gray-300 mb-6"></p>
+            <button onclick="closeModal()" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-orange-500 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition transform hover:scale-105">
+                Compris !
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal API Actions -->
+    <div id="api-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+        <div class="bg-halloween-card border-2 border-orange-500 p-6 md:p-8 rounded-3xl max-w-2xl w-full mx-4 shadow-2xl box-glow">
+            <div class="flex justify-between items-center mb-4 border-b border-purple-900 pb-3">
+                <h3 class="text-2xl font-creepster text-orange-400">Enregistrement d'Action</h3>
+                <button onclick="closeApiModal()" class="text-gray-400 hover:text-white font-bold text-xl">✕</button>
+            </div>
+            <p class="text-xs text-gray-300 mb-4">
+                Collez un objet JavaScript d'action valide pour l'injecter à chaud dans la partie !
+            </p>
+            <textarea id="api-input-code" rows="8" class="w-full bg-gray-950 font-mono text-xs text-green-400 p-3 rounded-xl border border-purple-800 focus:outline-none focus:ring-2 focus:ring-orange-500 mb-4" placeholder='{
+  id: "custom_boost",
+  name: "Saut Fantomatique",
+  description: "Avance de 5 cases.",
+  icon: "🚀",
+  canBePlayerCard: true,
+  execute: function(gameState, playerId) {
+    const p = gameState.players.find(x => x.id === playerId);
+    if(p) p.position = Math.min(gameState.maxCell, p.position + 5);
+    return { gameState, message: "A sauté de 5 cases !", extraTurn: false };
+  }
+}'></textarea>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeApiModal()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold rounded-xl text-sm transition">Fermer</button>
+                <button onclick="injectCustomAction()" class="px-5 py-2 bg-gradient-to-r from-orange-600 to-purple-600 hover:opacity-90 text-white font-bold rounded-xl text-sm shadow transition">Exécuter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÉCRAN 1 : CONFIGURATION -->
+    <div id="setup-screen" class="w-full max-w-2xl bg-halloween-card border-2 border-purple-800/60 rounded-3xl p-6 md:p-8 box-glow transition-all duration-500">
+        <h2 class="text-2xl font-creepster text-purple-300 mb-6 text-center border-b border-purple-900 pb-3">
+            Configuration des Équipes de l'Effroi
+        </h2>
+
+        <div class="mb-6">
+            <label for="team-count-input" class="block text-sm font-medium text-gray-300 mb-2">
+                Nombre d'équipes (entre 2 et 10) :
+            </label>
+            <div class="flex items-center gap-4">
+                <input type="number" id="team-count-input" min="2" max="10" value="3" 
+                    class="w-24 bg-gray-900 border border-purple-600 rounded-xl px-4 py-2 text-white font-bold text-center text-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <button onclick="generateTeamInputs()" class="px-5 py-2.5 bg-purple-700 hover:bg-purple-600 text-white font-semibold rounded-xl shadow transition transform hover:scale-105">
+                    Générer les noms
+                </button>
+            </div>
+        </div>
+
+        <div id="teams-config-container" class="space-y-3 mb-8 max-h-72 overflow-y-auto pr-2"></div>
+
+        <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-orange-600 via-purple-600 to-green-600 hover:opacity-90 text-white font-creepster text-2xl rounded-2xl shadow-2xl transition transform hover:scale-[1.02] active:scale-95 neon-glow">
+            🕯️ Lancer le Jeu d'Halloween 🕯️
+        </button>
+    </div>
+
+    <!-- ÉCRAN 2 : PLATEAU DE JEU -->
+    <div id="game-screen" class="w-full max-w-7xl hidden flex flex-col lg:flex-row gap-6">
+        
+        <!-- Panneau de Gauche -->
+        <div class="w-full lg:w-1/3 bg-halloween-card border-2 border-purple-800/60 rounded-3xl p-5 md:p-6 flex flex-col justify-between box-glow">
+            <div>
+                <div class="flex justify-between items-center mb-4 border-b border-purple-900 pb-3">
+                    <h3 class="text-xl font-creepster text-orange-400">Tableau des Esprits</h3>
+                    <button onclick="returnToSetup()" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 px-3 py-1.5 rounded-lg border border-red-700 transition">
+                        Recommencer
+                    </button>
+                </div>
+
+                <!-- Tour Actuel -->
+                <div id="current-turn-banner" class="bg-purple-950/80 border-2 border-purple-500/50 rounded-2xl p-4 mb-4 text-center">
+                    <p class="text-xs text-purple-300 uppercase tracking-wider mb-1">C'est au tour de :</p>
+                    <div id="active-team-display" class="text-2xl font-creepster text-orange-400 flex items-center justify-center gap-2">
+                        <span>🎃</span> <span>Les Citrouilles</span>
+                    </div>
+                    <!-- Affichage du dé actif de l'équipe -->
+                    <div id="active-dice-badge" class="mt-2 text-[11px] bg-orange-950/80 border border-orange-600/50 text-orange-300 py-1 px-2 rounded-lg inline-block">
+                        🎲 Dé Classique (1-6)
+                    </div>
+                </div>
+
+                <!-- Zone de Lancer de Dés -->
+                <div class="bg-gray-900/80 border border-purple-900/50 rounded-2xl p-4 mb-4 text-center flex flex-col items-center">
+                    <div class="flex gap-4 mb-3">
+                        <div id="die-1" class="w-14 h-14 bg-halloween-card border-2 border-orange-500 rounded-xl flex items-center justify-center text-2xl font-bold shadow-lg">🎲</div>
+                        <div id="die-2" class="w-14 h-14 bg-halloween-card border-2 border-orange-500 rounded-xl flex items-center justify-center text-2xl font-bold shadow-lg">🎲</div>
+                    </div>
+                    <button id="roll-dice-btn" onclick="rollDice()" class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white font-creepster text-lg rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95">
+                        Lancer les Dés !
+                    </button>
+                </div>
+
+                <!-- Main de Cartes -->
+                <div class="bg-gray-950/90 border border-purple-800/70 rounded-2xl p-4 mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-xs font-bold text-orange-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>🃏</span> Cartes en Main (<span id="hand-count">0</span>)
+                        </h4>
+                        <span class="text-[10px] text-purple-400">Jouables à tout moment</span>
+                    </div>
+                    <div id="player-hand-container" class="flex gap-2 overflow-x-auto py-2 min-h-[90px] items-center">
+                        <div class="text-xs text-gray-500 italic w-full text-center">Aucune carte en main</div>
+                    </div>
+                </div>
+
+                <!-- Statut des Équipes -->
+                <div class="mb-4">
+                    <h4 class="text-sm font-bold text-purple-300 mb-2 uppercase tracking-wider">Statut des Équipes :</h4>
+                    <div id="teams-status-list" class="space-y-2 max-h-32 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+
+            <!-- Historique -->
+            <div class="mt-2">
+                <h4 class="text-sm font-bold text-purple-300 mb-1.5 uppercase tracking-wider">Chronique du Manoir :</h4>
+                <div id="game-log" class="bg-gray-950 border border-purple-900/40 rounded-xl p-3 h-28 overflow-y-auto text-xs space-y-1 font-mono text-gray-300">
+                    <div class="text-purple-400">Le jeu commence. Que les ombres vous guident...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panneau de Droite : Plateau de Jeu -->
+        <div class="w-full lg:w-2/3 bg-halloween-card border-2 border-purple-800/60 rounded-3xl p-5 md:p-6 flex flex-col items-center justify-center box-glow">
+            <h3 class="text-xl font-creepster text-orange-400 mb-4 text-center">Circuit du Surnaturel (42 Cases)</h3>
+            
+            <div id="board-grid" class="grid grid-cols-6 sm:grid-cols-7 gap-2 md:gap-3 w-full max-w-4xl p-3 bg-gray-950/60 border border-purple-900/50 rounded-2xl"></div>
+            
+            <div class="mt-4 flex flex-wrap justify-center gap-3 text-xs text-gray-400 text-center">
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span> 🕳️ Puits</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> 🕸️ Toile (+2)</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> 🎁 Trésor Positif</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> ⚠️ Piège Négatif</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span> 🎲 Dé Spécial</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> 📜 Action</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÉCRAN 3 : VICTOIRE -->
+    <div id="victory-screen" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden backdrop-blur-md">
+        <div class="bg-halloween-card border-4 border-orange-500 p-8 rounded-3xl max-w-lg w-full mx-4 shadow-2xl text-center box-glow animate-bounce">
+            <div class="text-6xl mb-4">🏆🎃👻</div>
+            <h2 id="victory-title" class="text-4xl font-creepster text-orange-400 mb-3 neon-glow">Victoire macabre !</h2>
+            <p id="victory-message" class="text-gray-200 text-lg mb-6">L'équipe a triomphé des forces occultes !</p>
+            <button onclick="returnToSetup()" class="px-8 py-3 bg-gradient-to-r from-orange-600 to-purple-600 text-white font-creepster text-xl rounded-xl shadow-lg hover:opacity-90 transition transform hover:scale-105">
+                Nouvelle Partie
+            </button>
+        </div>
+    </div>
+
+    <!-- MOTEUR JAVASCRIPT -->
+    <script>
+        // Types de dés spéciaux gagnables sur le plateau
+        const diceTypes = {
+            classic: { name: "Dé Classique", description: "Lance 1 à 6", roll: () => Math.floor(Math.random() * 6) + 1 },
+            speedy: { name: "Dé Rapide", description: "Lance 4 à 8 (Gros score)", roll: () => Math.floor(Math.random() * 5) + 4 },
+            tiny: { name: "Dé de Précision", description: "Lance 1 à 3 (Pour ajuster)", roll: () => Math.floor(Math.random() * 3) + 1 }
+        };
+
+        const gooseActionsRegistry = {};
+
+        function registerGooseAction(actionObject) {
+            if (!actionObject || !actionObject.id) return false;
+            gooseActionsRegistry[actionObject.id] = actionObject;
+            return true;
+        }
+
+        // --- ENREGISTREMENT DES CARTES ACTIONS VARIÉES ---
+        registerGooseAction({
+            id: "coup_de_pouce", name: "Coup de pouce", description: "Avance immédiatement de 3 cases.", icon: "🚀", canBePlayerCard: true,
+            execute: function(gameState, playerId) {
+                const p = gameState.players.find(x => x.id === playerId);
+                if(p) p.position = Math.min(gameState.maxCell, p.position + 3);
+                return { gameState, message: `A utilisé Coup de pouce (+3 cases).`, extraTurn: false };
+            }
+        });
+
+        registerGooseAction({
+            id: "potion_magique", name: "Potion de hâte", description: "Rejoue un tour immédiatement.", icon: "🧪", canBePlayerCard: true,
+            execute: function(gameState, playerId) {
+                return { gameState, message: `A bu une Potion de hâte (Rejoue) !`, extraTurn: true };
+            }
+        });
+
+        registerGooseAction({
+            id: "teleportation", name: "Téléportation Spectrale", description: "Saute directement à la case 21.", icon: "🌀", canBePlayerCard: true,
+            execute: function(gameState, playerId) {
+                const p = gameState.players.find(x => x.id === playerId);
+                if(p) p.position = 21;
+                return { gameState, message: `S'est téléporté à la case 21 !`, extraTurn: false };
+            }
+        });
+
+        registerGooseAction({
+            id: "bouclier", name: "Bouclier d'Os", description: "Protège contre le prochain malus ou recul.", icon: "🛡️", canBePlayerCard: true,
+            execute: function(gameState, playerId) {
+                const p = gameState.players.find(x => x.id === playerId);
+                if(p) p.shield = true;
+                return { gameState, message: `Active son Bouclier d'Os protégeant des pièges !`, extraTurn: false };
+            }
+        });
+
+        registerGooseAction({
+            id: "sabotage", name: "Sabotage Nocturne", description: "Fait reculer un adversaire de 2 cases.", icon: "⚡", canBePlayerCard: true,
+            execute: function(gameState, playerId) {
+                const targets = gameState.players.filter(x => x.id !== playerId);
+                if(targets.length > 0) {
+                    const target = targets[Math.floor(Math.random() * targets.length)];
+                    target.position = Math.max(1, target.position - 2);
+                    return { gameState, message: `A saboté ${target.name} qui recule à la case ${target.position} !`, extraTurn: false };
+                }
+                return { gameState, message: "Aucune cible pour le sabotage.", extraTurn: false };
+            }
+        });
+
+        // --- CONFIGURATION DU PLATEAU (AVEC EFFETS POSITIFS/NÉGATIFS & DÉS) ---
+        const specialCases = {
+            5: { type: 'positive', text: '🎁 Trésor secret : Avance de 2 cases !', icon: '🎁', effect: (p, gs) => { p.position = Math.min(gs.maxCell, p.position + 2); } },
+            8: { type: 'dice_win', text: '🎲 Autel du Dé Rapide (4-8) !', icon: '🎲', diceType: 'speedy' },
+            10: { type: 'negative', text: '💀 Piège empoisonné : Recule de 2 cases !', icon: '⚠️', effect: (p, gs) => { if(!p.shield) p.position = Math.max(1, p.position - 2); else p.shield = false; } },
+            15: { type: 'well', text: '🕳️ Puits maudit ! Bloqué 1 tour.', icon: '🕳️' },
+            18: { type: 'positive', text: '✨ Bénédiction des Esprits : Pioche une carte action !', icon: '📜', effect: (p) => { 
+                const keys = Object.keys(gooseActionsRegistry);
+                p.hand.push(keys[Math.floor(Math.random() * keys.length)]);
+            }},
+            24: { type: 'dice_win', text: '🎲 Sanctuaire du Dé de Précision (1-3) !', icon: '🎲', diceType: 'tiny' },
+            26: { type: 'negative', text: '🦇 Nuage de chauves-souris : Perds ton tour !', icon: '🦇', effect: (p) => { p.skipTurns = 1; } },
+            30: { type: 'positive', text: '🌟 Fontaine de Jouvence : Rejoue un tour !', icon: '🌟', effect: (p, gs, state) => { state.extraTurn = true; } },
+            35: { type: 'negative', text: '⛓️ Cachot sombre : Recule de 4 cases !', icon: '⛓️', effect: (p, gs) => { if(!p.shield) p.position = Math.max(1, p.position - 4); else p.shield = false; } },
+            40: { type: 'ghost', text: '👻 Passage spectral vers la victoire !', target: 42, icon: '👻' }
+        };
+
+        let gameState = { players: [], board: {}, turnIndex: 0, round: 1, maxCell: 42 };
+        const defaultTeamsInfo = [
+            { name: "Les Citrouilles", icon: "🎃", color: "#f97316" },
+            { name: "Les Fantômes", icon: "👻", color: "#e2e8f0" },
+            { name: "Les Vampires", icon: "🧛", color: "#ef4444" },
+            { name: "Les Sorcières", icon: "🧙", color: "#a855f7" }
+        ];
+
+        function showModal(title, message) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+        function closeModal() { document.getElementById('custom-modal').classList.add('hidden'); }
+        function openApiModal() { document.getElementById('api-modal').classList.remove('hidden'); }
+        function closeApiModal() { document.getElementById('api-modal').classList.add('hidden'); }
+
+        function injectCustomAction() {
+            try {
+                const actionObj = eval('(' + document.getElementById('api-input-code').value + ')');
+                if (registerGooseAction(actionObj)) {
+                    showModal("Succès API", `Action "${actionObj.name}" enregistrée !`);
+                    closeApiModal();
+                }
+            } catch (err) { showModal("Erreur", err.message); }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => { generateTeamInputs(); });
+
+        function generateTeamInputs() {
+            const count = Math.min(10, Math.max(2, parseInt(document.getElementById('team-count-input').value) || 3));
+            const container = document.getElementById('teams-config-container');
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const d = defaultTeamsInfo[i] || { name: `Équipe ${i+1}`, icon: "👻", color: "#a855f7" };
+                container.innerHTML += `
+                    <div class="flex items-center gap-3 bg-gray-900/60 p-3 rounded-xl border border-purple-900/40">
+                        <span class="text-2xl w-8 text-center">${d.icon}</span>
+                        <input type="text" value="${d.name}" data-icon="${d.icon}" data-color="${d.color}" class="team-name-input flex-1 bg-gray-800 border border-purple-700 rounded-lg px-3 py-2 text-white font-semibold">
+                        <div class="w-6 h-6 rounded-full" style="background-color: ${d.color};"></div>
+                    </div>`;
+            }
+        }
+
+        function startGame() {
+            const playersList = [];
+            document.querySelectorAll('.team-name-input').forEach((input, index) => {
+                playersList.push({
+                    id: `player_${index + 1}`,
+                    name: input.value.trim() || `Équipe ${index + 1}`,
+                    icon: input.getAttribute('data-icon'),
+                    color: input.getAttribute('data-color'),
+                    position: 1,
+                    skipTurns: 0,
+                    hand: ['coup_de_pouce', 'potion_magique'],
+                    diceType: 'classic',
+                    shield: false
+                });
+            });
+
+            gameState = { players: playersList, board: specialCases, turnIndex: 0, round: 1, maxCell: 42 };
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            renderBoard();
+            updateUIState();
+            addLog("La partie commence !");
+        }
+
+        function returnToSetup() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('setup-screen').classList.remove('hidden');
+        }
+
+        function renderBoard() {
+            const grid = document.getElementById('board-grid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= gameState.maxCell; i++) {
+                const special = gameState.board[i];
+                grid.innerHTML += `
+                    <div id="cell-${i}" class="relative aspect-square bg-gray-900/90 border border-purple-800/40 rounded-xl flex flex-col items-center justify-between p-1.5">
+                        <div class="w-full flex justify-between items-center"><span class="text-xs font-bold text-purple-400">${i}</span><span class="text-xs">${special?.icon || ''}</span></div>
+                        <div class="team-tokens-container flex flex-wrap gap-1 items-center justify-center flex-1 my-1" data-cell="${i}"></div>
+                        <div class="text-[9px] text-gray-500">${i === 42 ? '🏁' : ''}</div>
+                    </div>`;
+            }
+            updateTokensOnBoard();
+        }
+
+        function updateTokensOnBoard() {
+            document.querySelectorAll('.team-tokens-container').forEach(c => c.innerHTML = '');
+            gameState.players.forEach(p => {
+                const container = document.querySelector(`[data-cell="${p.position}"]`);
+                if (container) {
+                    container.innerHTML += `<div class="w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md" style="background-color: ${p.color};" title="${p.name}">${p.icon}</div>`;
+                }
+            });
+        }
+
+        function updateUIState() {
+            updateTokensOnBoard();
+            updateTeamsStatus();
+            updateTurnBanner();
+            updatePlayerHandUI();
+        }
+
+        function updateTeamsStatus() {
+            const list = document.getElementById('teams-status-list');
+            list.innerHTML = '';
+            gameState.players.forEach((p, idx) => {
+                const active = idx === gameState.turnIndex;
+                list.innerHTML += `
+                    <div class="flex items-center justify-between p-2 rounded-xl border text-xs ${active ? 'bg-purple-900/40 border-orange-500' : 'bg-gray-900/50 border-purple-900/30 opacity-75'}">
+                        <div class="flex items-center gap-2"><span class="text-lg">${p.icon}</span><span class="font-bold text-white">${p.name}</span></div>
+                        <div class="flex items-center gap-2">
+                            <span>🃏 ${p.hand.length}</span>
+                            <span class="px-2 py-0.5 rounded bg-gray-800 text-gray-300 font-mono">Case ${p.position}</span>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function updateTurnBanner() {
+            const p = gameState.players[gameState.turnIndex];
+            document.getElementById('active-team-display').innerHTML = `<span>${p.icon}</span> <span>${p.name}</span>`;
+            const diceInfo = diceTypes[p.diceType] || diceTypes.classic;
+            document.getElementById('active-dice-badge').innerText = `🎲 ${diceInfo.name} (${diceInfo.description})`;
+        }
+
+        function updatePlayerHandUI() {
+            const p = gameState.players[gameState.turnIndex];
+            const container = document.getElementById('player-hand-container');
+            document.getElementById('hand-count').innerText = p.hand.length;
+            container.innerHTML = '';
+
+            if (p.hand.length === 0) {
+                container.innerHTML = `<div class="text-xs text-gray-500 italic w-full text-center">Aucune carte en main</div>`;
+                return;
+            }
+
+            p.hand.forEach((cardId, cardIdx) => {
+                const action = gooseActionsRegistry[cardId];
+                if (!action) return;
+                container.innerHTML += `
+                    <div onclick="playCard(${cardIdx})" class="bg-halloween-card border border-purple-600 hover:border-orange-400 p-2 rounded-xl cursor-pointer text-center min-w-[90px] shadow transition transform hover:-translate-y-1">
+                        <div class="text-xl">${action.icon}</div>
+                        <div class="text-[10px] font-bold text-orange-300 truncate">${action.name}</div>
+                    </div>`;
+            });
+        }
+
+        function playCard(cardIdx) {
+            const p = gameState.players[gameState.turnIndex];
+            const cardId = p.hand.splice(cardIdx, 1)[0];
+            const action = gooseActionsRegistry[cardId];
+            if (action && typeof action.execute === 'function') {
+                const res = action.execute(gameState, p.id);
+                addLog(`${p.name} a joué [${action.name}] : ${res.message}`);
+                if (res.extraTurn) gameState.extraTurn = true;
+                updateUIState();
+                checkVictory();
+            }
+        }
+
+        function rollDice() {
+            const p = gameState.players[gameState.turnIndex];
+            if (p.skipTurns > 0) {
+                p.skipTurns--;
+                addLog(`${p.name} est bloqué ce tour-ci.`);
+                nextTurn();
+                return;
+            }
+
+            const diceRoller = diceTypes[p.diceType]?.roll || diceTypes.classic.roll;
+            const d1 = diceRoller();
+            const d2 = diceRoller();
+            const total = d1 + d2;
+
+            document.getElementById('die-1').innerText = d1;
+            document.getElementById('die-2').innerText = d2;
+
+            const oldPos = p.position;
+            p.position += total;
+
+            if (p.position > gameState.maxCell) {
+                const overflow = p.position - gameState.maxCell;
+                p.position = gameState.maxCell - overflow;
+                addLog(`${p.name} a fait ${total} (dépassé la case 42) et rebondit à la case ${p.position} !`);
+            } else {
+                addLog(`${p.name} a lancé ${total} et avance de la case ${oldPos} à ${p.position}.`);
+            }
+
+            checkCellEffects(p);
+            updateUIState();
+
+            if (checkVictory()) return;
+
+            if (!gameState.extraTurn) {
+                nextTurn();
+            } else {
+                gameState.extraTurn = false;
+                addLog(`${p.name} rejoue un tour supplémentaire !`);
+            }
+        }
+
+        function checkCellEffects(p) {
+            const special = gameState.board[p.position];
+            if (!special) return;
+
+            if (special.type === 'positive' && special.effect) {
+                special.effect(p, gameState);
+                addLog(`${p.name} déclenche l'effet positif : ${special.text}`);
+            } else if (special.type === 'negative' && special.effect) {
+                special.effect(p, gameState);
+                addLog(`${p.name} déclenche l'effet négatif : ${special.text}`);
+            } else if (special.type === 'dice_win') {
+                p.diceType = special.diceType;
+                addLog(`${p.name} remporte le ${diceTypes[special.diceType].name} !`);
+                showModal("Dé Spécial Gagné !", `${p.name} a obtenu le ${diceTypes[special.diceType].name} !`);
+            } else if (special.type === 'well') {
+                p.skipTurns = 1;
+                addLog(`${p.name} tombe dans le puits maudit !`);
+            } else if (special.target) {
+                p.position = special.target;
+                addLog(`${p.name} active une case spéciale et se déplace vers la case ${p.target} !`);
+            }
+        }
+
+        function checkVictory() {
+            const p = gameState.players[gameState.turnIndex];
+            if (p.position === gameState.maxCell) {
+                document.getElementById('victory-title').innerText = `Victoire de ${p.name} !`;
+                document.getElementById('victory-message').innerText = `${p.name} a atteint le Portail Mystique en premier !`;
+                document.getElementById('victory-screen').classList.remove('hidden');
+                return true;
+            }
+            return false;
+        }
+
+        function nextTurn() {
+            gameState.turnIndex = (gameState.turnIndex + 1) % gameState.players.length;
+            updateUIState();
+        }
+
+        function addLog(msg) {
+            const logContainer = document.getElementById('game-log');
+            logContainer.innerHTML += `<div>> ${msg}</div>`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
