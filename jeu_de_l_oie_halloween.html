@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de l'Oie d'Halloween</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        halloween: {
+                            dark: '#0f071a',
+                            card: '#1a102f',
+                            purple: '#4c1d95',
+                            orange: '#f97316',
+                            glow: '#a855f7',
+                            slime: '#22c55e',
+                            blood: '#ef4444'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Creepster & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .font-creepster {
+            font-family: 'Creepster', cursive, sans-serif;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0413;
+            color: #f3f4f6;
+            background-image: radial-gradient(circle at 50% 20%, #1f0c3d 0%, #0b0413 70%);
+            min-height: 100vh;
+        }
+        .neon-glow {
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.7), 0 0 20px rgba(249, 115, 22, 0.5);
+        }
+        .box-glow {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a102f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4c1d95;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7c3aed;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center justify-start min-h-screen">
+
+    <!-- Header -->
+    <header class="text-center mb-6">
+        <h1 class="text-4xl md:text-6xl font-creepster text-orange-500 neon-glow tracking-wider mb-2">
+            🎃 Le Manoir Maudit : Jeu de l'Oie 👻
+        </h1>
+        <p class="text-purple-300 text-sm md:text-base">Atteignez le Portail Mystique (Case 42) sans vous faire dévorer par les ombres !</p>
+    </header>
+
+    <!-- Modal Personnalisé (Remplacement de alert) -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+        <div class="bg-halloween-card border-2 border-purple-500 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl text-center box-glow">
+            <h3 id="modal-title" class="text-2xl font-creepster text-orange-400 mb-3">Avertissement</h3>
+            <p id="modal-message" class="text-gray-300 mb-6"></p>
+            <button onclick="closeModal()" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-orange-500 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition transform hover:scale-105">
+                Compris !
+            </button>
+        </div>
+    </div>
+
+    <!-- ÉCRAN 1 : CONFIGURATION -->
+    <div id="setup-screen" class="w-full max-w-2xl bg-halloween-card border-2 border-purple-800/60 rounded-3xl p-6 md:p-8 box-glow transition-all duration-500">
+        <h2 class="text-2xl font-creepster text-purple-300 mb-6 text-center border-b border-purple-900 pb-3">
+            Configuration des Équipes de l'Effroi
+        </h2>
+
+        <div class="mb-6">
+            <label for="team-count-input" class="block text-sm font-medium text-gray-300 mb-2">
+                Nombre d'équipes (entre 2 et 10) :
+            </label>
+            <div class="flex items-center gap-4">
+                <input type="number" id="team-count-input" min="2" max="10" value="3" 
+                    class="w-24 bg-gray-900 border border-purple-600 rounded-xl px-4 py-2 text-white font-bold text-center text-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <button onclick="generateTeamInputs()" class="px-5 py-2.5 bg-purple-700 hover:bg-purple-600 text-white font-semibold rounded-xl shadow transition transform hover:scale-105">
+                    Générer les noms
+                </button>
+            </div>
+        </div>
+
+        <!-- Conteneur dynamique des équipes -->
+        <div id="teams-config-container" class="space-y-3 mb-8 max-h-72 overflow-y-auto pr-2">
+            <!-- Rempli par JavaScript -->
+        </div>
+
+        <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-orange-600 via-purple-600 to-green-600 hover:opacity-90 text-white font-creepster text-2xl rounded-2xl shadow-2xl transition transform hover:scale-[1.02] active:scale-95 neon-glow">
+            🕯️ Lancer le Jeu d'Halloween 🕯️
+        </button>
+    </div>
+
+    <!-- ÉCRAN 2 : PLATEAU DE JEU & TABLEAU DE BORD -->
+    <div id="game-screen" class="w-full max-w-7xl hidden flex flex-col lg:flex-row gap-6">
+        
+        <!-- Panneau de Gauche : Commandes & Historique -->
+        <div class="w-full lg:w-1/3 bg-halloween-card border-2 border-purple-800/60 rounded-3xl p-5 md:p-6 flex flex-col justify-between box-glow">
+            <div>
+                <div class="flex justify-between items-center mb-4 border-b border-purple-900 pb-3">
+                    <h3 class="text-xl font-creepster text-orange-400">Tableau des Esprits</h3>
+                    <button onclick="returnToSetup()" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 px-3 py-1.5 rounded-lg border border-red-700 transition">
+                        Recommencer
+                    </button>
+                </div>
+
+                <!-- Tour Actuel -->
+                <div id="current-turn-banner" class="bg-purple-950/80 border-2 border-purple-500/50 rounded-2xl p-4 mb-5 text-center">
+                    <p class="text-xs text-purple-300 uppercase tracking-wider mb-1">C'est au tour de :</p>
+                    <div id="active-team-display" class="text-2xl font-creepster text-orange-400 flex items-center justify-center gap-2">
+                        <span>🎃</span> <span>Les Citrouilles</span>
+                    </div>
+                </div>
+
+                <!-- Zone de Lancer de Dés -->
+                <div class="bg-gray-900/80 border border-purple-900/50 rounded-2xl p-5 mb-5 text-center flex flex-col items-center">
+                    <div class="flex gap-4 mb-4">
+                        <div id="die-1" class="w-16 h-16 bg-halloween-card border-2 border-orange-500 rounded-xl flex items-center justify-center text-3xl font-bold shadow-lg transform transition">
+                            🎲
+                        </div>
+                        <div id="die-2" class="w-16 h-16 bg-halloween-card border-2 border-orange-500 rounded-xl flex items-center justify-center text-3xl font-bold shadow-lg transform transition">
+                            🎲
+                        </div>
+                    </div>
+                    <button id="roll-dice-btn" onclick="rollDice()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white font-creepster text-xl rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95">
+                        Lancer les Dés !
+                    </button>
+                </div>
+
+                <!-- Classement / Positions -->
+                <div class="mb-4">
+                    <h4 class="text-sm font-bold text-purple-300 mb-2 uppercase tracking-wider">Statut des Équipes :</h4>
+                    <div id="teams-status-list" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        <!-- Rempli par JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historique des actions -->
+            <div class="mt-4">
+                <h4 class="text-sm font-bold text-purple-300 mb-2 uppercase tracking-wider">Chronique du Manoir :</h4>
+                <div id="game-log" class="bg-gray-950 border border-purple-900/40 rounded-xl p-3 h-36 overflow-y-auto text-xs space-y-1 font-mono text-gray-300">
+                    <div class="text-purple-400">Le jeu commence. Que les ombres vous guident...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panneau de Droite : Plateau de Jeu Visuel -->
+        <div class="w-full lg:w-2/3 bg-halloween-card border-2 border-purple-800/60 rounded-3xl p-5 md:p-6 flex flex-col items-center justify-center box-glow">
+            <h3 class="text-xl font-creepster text-orange-400 mb-4 text-center">Circuit du Surnaturel (42 Cases)</h3>
+            
+            <!-- Grille du Plateau (Responsive Circuit Grid) -->
+            <div id="board-grid" class="grid grid-cols-6 sm:grid-cols-7 gap-2 md:gap-3 w-full max-w-4xl p-3 bg-gray-950/60 border border-purple-900/50 rounded-2xl">
+                <!-- Généré dynamiquement par JS -->
+            </div>
+            
+            <div class="mt-4 flex flex-wrap justify-center gap-3 text-xs text-gray-400 text-center">
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span> 🕳️ Puits (-1 tour)</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> 🕸️ Toile (+2 cases)</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span> 💀 Tête de Mort (Retour case 1)</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> 🧙 Chaudière (Rejouer)</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ÉCRAN 3 : VICTOIRE -->
+    <div id="victory-screen" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden backdrop-blur-md">
+        <div class="bg-halloween-card border-4 border-orange-500 p-8 rounded-3xl max-w-lg w-full mx-4 shadow-2xl text-center box-glow animate-bounce">
+            <div class="text-6xl mb-4">🏆🎃👻</div>
+            <h2 id="victory-title" class="text-4xl font-creepster text-orange-400 mb-3 neon-glow">Victoire macabre !</h2>
+            <p id="victory-message" class="text-gray-200 text-lg mb-6">L'équipe a triomphé des forces occultes !</p>
+            <button onclick="returnToSetup()" class="px-8 py-3 bg-gradient-to-r from-orange-600 to-purple-600 text-white font-creepster text-xl rounded-xl shadow-lg hover:opacity-90 transition transform hover:scale-105">
+                Nouvelle Partie
+            </button>
+        </div>
+    </div>
+
+    <!-- Logique JavaScript -->
+    <script>
+        // Configuration des icônes et couleurs par défaut pour les équipes
+        const defaultTeamsInfo = [
+            { name: "Les Citrouilles", icon: "🎃", color: "#f97316" },
+            { name: "Les Fantômes", icon: "👻", color: "#e2e8f0" },
+            { name: "Les Vampires", icon: "🧛", color: "#ef4444" },
+            { name: "Les Sorcières", icon: "🧙", color: "#a855f7" },
+            { name: "Les Zombies", icon: "🧟", color: "#22c55e" },
+            { name: "Les Squelettes", icon: "💀", color: "#facc15" },
+            { name: "Les Loups-Garous", icon: "🐺", color: "#38bdf8" },
+            { name: "Les Démons", icon: "😈", color: "#ec4899" },
+            { name: "Les Momies", icon: "🧟‍♂️", color: "#ca8a04" },
+            { name: "Les Chauves-souris", icon: "🦇", color: "#64748b" }
+        ];
+
+        let teams = [];
+        let currentTeamIndex = 0;
+        let isRolling = false;
+        const totalCases = 42;
+
+        // Définition des types de cases spéciales
+        const specialCases = {
+            6: { type: 'bridge', text: 'Pont du Squelette : Avance directement à la case 12 !', target: 12, icon: '🌉' },
+            12: { type: 'bridge', target: 6 },
+            15: { type: 'well', text: '🕳️ Puits maudit ! Bloqué pendant 1 tour.', icon: '🕳️' },
+            20: { type: 'spider', text: '🕸️ Toile d’araignée ! Propulsé +2 cases.', target: 22, icon: '🕸️' },
+            27: { type: 'cauldron', text: '🧙 Chaudron magique ! Rejoue immédiatement.', icon: '🧙' },
+            33: { type: 'skull', text: '💀 Crâne funeste ! Retour case départ (1).', target: 1, icon: '💀' },
+            38: { type: 'ghost', text: '👻 Passage secret spectral ! Avance à la case 40.', target: 40, icon: '👻' }
+        };
+
+        // Gestion de la modale personnalisée
+        function showModal(title, message) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        // Initialisation des champs de configuration d'équipe au chargement
+        window.addEventListener('DOMContentLoaded', () => {
+            generateTeamInputs();
+        });
+
+        function generateTeamInputs() {
+            const countInput = document.getElementById('team-count-input');
+            let count = parseInt(countInput.value);
+            
+            if (isNaN(count) || count < 2) count = 2;
+            if (count > 10) count = 10;
+            countInput.value = count;
+
+            const container = document.getElementById('teams-config-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const defaultInfo = defaultTeamsInfo[i];
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-3 bg-gray-900/60 p-3 rounded-xl border border-purple-900/40';
+                div.innerHTML = `
+                    <span class="text-2xl w-8 text-center">${defaultInfo.icon}</span>
+                    <input type="text" value="${defaultInfo.name}" data-index="${i}" data-icon="${defaultInfo.icon}" data-color="${defaultInfo.color}"
+                        class="team-name-input flex-1 bg-gray-800 border border-purple-700/50 rounded-lg px-3 py-2 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <div class="w-6 h-6 rounded-full shadow" style="background-color: ${defaultInfo.color};"></div>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        // Démarrage du jeu
+        function startGame() {
+            const nameInputs = document.querySelectorAll('.team-name-input');
+            teams = [];
+
+            nameInputs.forEach((input) => {
+                teams.push({
+                    name: input.value.trim() || "Équipe sans nom",
+                    icon: input.getAttribute('data-icon'),
+                    color: input.getAttribute('data-color'),
+                    position: 1, // Case de départ
+                    skipTurns: 0 // Tours passés (ex: puits)
+                });
+            });
+
+            currentTeamIndex = 0;
+            
+            // Basculer d'écran
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+
+            renderBoard();
+            updateTeamsStatus();
+            updateTurnBanner();
+            addLog("La partie commence dans le Manoir Maudit !");
+        }
+
+        function returnToSetup() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('setup-screen').classList.remove('hidden');
+        }
+
+        // Affichage visuel du plateau
+        function renderBoard() {
+            const boardGrid = document.getElementById('board-grid');
+            boardGrid.innerHTML = '';
+
+            for (let i = 1; i <= totalCases; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'relative aspect-square bg-gray-900/90 border border-purple-800/40 rounded-xl flex flex-col items-center justify-between p-1.5 transition hover:border-orange-500';
+                cell.id = `cell-${i}`;
+
+                // Numéro de case et icône spéciale éventuelle
+                let badgeHTML = `<span class="text-xs font-bold text-purple-400">${i}</span>`;
+                if (i === totalCases) {
+                    badgeHTML = `<span class="text-xs font-bold text-orange-400">🏁 Portail</span>`;
+                    cell.classList.add('border-orange-500', 'bg-purple-950/40');
+                } else if (specialCases[i]) {
+                    badgeHTML = `<span class="text-xs" title="${specialCases[i].text}">${specialCases[i].icon || '✨'}</span>`;
+                }
+
+                cell.innerHTML = `
+                    <div class="w-full flex justify-between items-center">${badgeHTML}</div>
+                    <div class="team-tokens-container flex flex-wrap gap-1 items-center justify-center flex-1 my-1" data-cell="${i}"></div>
+                    <div class="text-[9px] text-gray-500">${i === 1 ? 'Départ' : ''}</div>
+                `;
+
+                boardGrid.appendChild(cell);
+            }
+
+            updateTokensOnBoard();
+        }
+
+        // Mettre à jour l'affichage des pions sur les cases
+        function updateTokensOnBoard() {
+            // Vider tous les conteneurs de pions
+            document.querySelectorAll('.team-tokens-container').forEach(container => {
+                container.innerHTML = '';
+            });
+
+            // Placer chaque équipe sur sa case
+            teams.forEach((team, idx) => {
+                const cellContainer = document.querySelector(`[data-cell="${team.position}"]`);
+                if (cellContainer) {
+                    const token = document.createElement('div');
+                    token.className = 'w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md transform hover:scale-125 transition cursor-pointer';
+                    token.style.backgroundColor = team.color;
+                    token.title = `${team.name} (Case ${team.position})`;
+                    token.innerText = team.icon;
+                    cellContainer.appendChild(token);
+                }
+            });
+        }
+
+        // Mettre à jour le panneau latéral des équipes
+        function updateTeamsStatus() {
+            const listContainer = document.getElementById('teams-status-list');
+            listContainer.innerHTML = '';
+
+            teams.forEach((team, idx) => {
+                const isActive = idx === currentTeamIndex;
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-2 rounded-xl border text-xs transition ${
+                    isActive ? 'bg-purple-900/40 border-orange-500 shadow' : 'bg-gray-900/50 border-purple-900/30 opacity-75'
+                }`;
+                
+                let statusText = `Case ${team.position}`;
+                if (team.skipTurns > 0) statusText = `Bloqué (${team.skipTurns} tour)`;
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">${team.icon}</span>
+                        <span class="font-bold text-white truncate max-w-[100px]">${team.name}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-gray-800 text-gray-300 font-mono">${statusText}</span>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+
+        function updateTurnBanner() {
+            const activeTeam = teams[currentTeamIndex];
+            const display = document.getElementById('active-team-display');
+            display.innerHTML = `<span>${activeTeam.icon}</span> <span>${activeTeam.name}</span>`;
+        }
+
+        function addLog(message) {
+            const logContainer = document.getElementById('game-log');
+            const p = document.createElement('div');
+            p.className = 'text-gray-300 border-b border-purple-950 pb-1';
+            p.innerHTML = `<span class="text-orange-400 font-semibold">[Tour ${teams[currentTeamIndex]?.name || 'Système'}]</span> ${message}`;
+            logContainer.insertBefore(p, logContainer.firstChild);
+        }
+
+        // Lancer les dés
+        function rollDice() {
+            if (isRolling) return;
+            isRolling = true;
+
+            const rollBtn = document.getElementById('roll-dice-btn');
+            rollBtn.disabled = true;
+            rollBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const die1El = document.getElementById('die-1');
+            const die2El = document.getElementById('die-2');
+
+            // Animation visuelle de roulement de dés
+            let counter = 0;
+            const animInterval = setInterval(() => {
+                die1El.innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][Math.floor(Math.random() * 6)];
+                die2El.innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][Math.floor(Math.random() * 6)];
+                counter++;
+                if (counter > 10) {
+                    clearInterval(animInterval);
+                    finalizeRoll();
+                }
+            }, 80);
+        }
+
+        function finalizeRoll() {
+            const activeTeam = teams[currentTeamIndex];
+
+            // Vérifier si l'équipe est bloquée (ex: Puits)
+            if (activeTeam.skipTurns > 0) {
+                activeTeam.skipTurns--;
+                addLog(`${activeTeam.name} est prisonnier et passe son tour (${activeTeam.skipTurns} tour restant).`);
+                finishTurn();
+                return;
+            }
+
+            const die1 = Math.floor(Math.random() * 6) + 1;
+            const die2 = Math.floor(Math.random() * 6) + 1;
+            const totalRoll = die1 + die2;
+
+            // Afficher le résultat chiffré des dés
+            const diceFaces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+            document.getElementById('die-1').innerText = diceFaces[die1 - 1];
+            document.getElementById('die-2').innerText = diceFaces[die2 - 1];
+
+            addLog(`A fait ${die1} et ${die2} (Total : ${totalRoll}).`);
+
+            let oldPos = activeTeam.position;
+            let newPos = oldPos + totalRoll;
+
+            // Gestion du rebond si dépassement de la case finale (42)
+            if (newPos > totalCases) {
+                const overflow = newPos - totalCases;
+                newPos = totalCases - overflow;
+                addLog(`Dépassement ! Recule de ${overflow} cases pour atterrir sur la case ${newPos}.`);
+            } else {
+                addLog(`Avance de la case ${oldPos} à la case ${newPos}.`);
+            }
+
+            activeTeam.position = newPos;
+            updateTokensOnBoard();
+            updateTeamsStatus();
+
+            // Vérifier la victoire
+            if (newPos === totalCases) {
+                triggerVictory(activeTeam);
+                return;
+            }
+
+            // Vérifier les cases spéciales après déplacement initial
+            checkSpecialCase(activeTeam);
+        }
+
+        function checkSpecialCase(team) {
+            const pos = team.position;
+            const special = specialCases[pos];
+
+            if (special) {
+                setTimeout(() => {
+                    if (special.type === 'bridge') {
+                        team.position = special.target;
+                        addLog(`${special.text} -> Déplacement direct vers la case ${team.position}.`);
+                    } else if (special.type === 'well') {
+                        team.skipTurns = 1;
+                        addLog(special.text);
+                    } else if (special.type === 'spider') {
+                        team.position = Math.min(special.target, totalCases);
+                        addLog(special.text);
+                    } else if (special.type === 'skull') {
+                        team.position = special.target;
+                        addLog(special.text);
+                    } else if (special.type === 'ghost') {
+                        team.position = special.target;
+                        addLog(special.text);
+                    } else if (special.type === 'cauldron') {
+                        addLog(special.text);
+                        // Chaudron magique : rejoue immédiatement ! Son tour ne change pas.
+                        updateTokensOnBoard();
+                        updateTeamsStatus();
+                        resetRollButton();
+                        return;
+                    }
+
+                    updateTokensOnBoard();
+                    updateTeamsStatus();
+                    
+                    // Vérification de victoire suite à un effet bonus (ex: pont/fantôme)
+                    if (team.position === totalCases) {
+                        triggerVictory(team);
+                        return;
+                    }
+
+                    finishTurn();
+                }, 700);
+            } else {
+                finishTurn();
+            }
+        }
+
+        function finishTurn() {
+            // Passer au joueur suivant
+            currentTeamIndex = (currentTeamIndex + 1) % teams.length;
+            updateTurnBanner();
+            updateTeamsStatus();
+            resetRollButton();
+        }
+
+        function resetRollButton() {
+            isRolling = false;
+            const rollBtn = document.getElementById('roll-dice-btn');
+            rollBtn.disabled = false;
+            rollBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function triggerVictory(team) {
+            document.getElementById('victory-title').innerText = `Victoire de ${team.name} !`;
+            document.getElementById('victory-message').innerHTML = `L'équipe <span style="color: ${team.color}" class="font-bold">${team.icon} ${team.name}</span> a traversé les ténèbres du Manoir et atteint le Portail en premier !`;
+            document.getElementById('victory-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
